@@ -1,0 +1,11 @@
+[workspace]
+resolver = "2"
+memebers = [
+    "lib",
+    "miner",
+    "node",
+    "wallet",
+]
+members = ["lib", "miner", "node", "wallet"]
+
+
