@@ -2,7 +2,12 @@ use std::fmt;
 use crate::U256;
 use sha256::digest;
 use serde::Serialize;
-#[derive(Clone, Copy, Serialize)]
+
+#[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq, Eq)]
+
+
+
+
 pub struct Hash(U256);
 impl Hash {
     // hash anything that can be serde Serialized via ciborium

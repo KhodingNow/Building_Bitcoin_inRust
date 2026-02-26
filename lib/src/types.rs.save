@@ -12,60 +12,18 @@ use crate::crypto::{PublicKey, Signature};
 pub fn add_block(
     &mut self,
     block: Block,
+    
 ) -> Result<()> {
     // check if the block is valid
     if self.blocks.is_empty() {
-        // if this block is the first block, check if the block's prev_block_hash is all zeroes
-        if block.header.prev_block_hash != Hash::zero()
-        {
-            println!("zero hash");
-            return Err(BtcError::InvalidBlock);
-        }
-    } else {
-            // if this is not the first block, check if there block's prev_block_hash is the hash o f the last block
-            let last_block = self.blocks.last().unwrap();               if block.header.prev_block_hash
-                    != last_block.hash()
-
-                    {
-                        println!("prev hash is wrong");
-                        return Err(BtcError::InvalidBlock);
-                    }
-                    // Check if the block's hash is less than the target
-                    if !block
-                    .header
-                    .hash()
-                    .matches_target(block.header.target)                  
-                    {
-                        println!("does not match target");
-                        return Err(BtcError::InvalidBlock);
-                    }
-                    // check if the block's merkle root is correct
-                    let calculated_merkle_root = 
-                    MarkleRoot::calculate(&block.transactions);
-                    if calculated_merkle_root
-                    != block.header.merklr_root
-
-                    {
-                        println!("invalid merkle root");
-                        return Err(BtcError::InvalidMerkeleRoot);
-                    }
-                     // check if the block's timestamp is after the last block's timestamp
-                     if block.header.timestamp 
-                     <= last_block.header.timestamp
-
-                     {
-                        return Err(BtcError::invalidBlock);
-                     }
-                     // Verify all transactions in the block
-                     block.verify_transactions(
-                        self.block_height(),
-                        &self.utxos,
-                     )?;
+    // if this is the firt block, check if the block's prev_block_hash is all zeroes
+    if block.header.prev_block_hash != Hash::zero()
+    {
+        println!("zero hash");
+        return Err(BtcError::InvalidBlock);
     }
-    self.blocks.push(block);
-    Ok(())
+    }
 }
-
 
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
