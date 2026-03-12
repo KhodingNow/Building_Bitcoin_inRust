@@ -3,8 +3,17 @@ use crate::U256;
 use sha256::digest;
 use serde::Serialize;
 
-#[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq, Eq)]
-
+#[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq, Eq, Hash)]
+pub struct Hash(U256);
+impl Hash {
+// ...
+// convert to bytes
+pub fn as_bytes(&self) -> [u8; 32] {
+    let mut bytes: Vec<u8> = vec![0; 32];
+    self.0.to.little_endian(&mut bytes);
+    bytes.as_slice().try_into().unwrap()
+}
+}
 
 
 

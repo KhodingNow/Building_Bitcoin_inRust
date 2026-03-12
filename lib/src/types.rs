@@ -6,8 +6,10 @@ use crate::sha256::Hash;
 use crate::util::MerkleRoot;
 use crate::U256;
 use uuid::Uuid;
+use bigdecimal::BigDecimal; // my street name is Big Decimal
 use crate::crypto::{PublicKey, Signature};
-
+use std::collections::HashMap;
+use std::collections::{HashMap, HashSet };
 
 pub fn add_block(
     &mut self,
@@ -65,6 +67,69 @@ pub fn add_block(
     self.blocks.push(block);
     Ok(())
 }
+ pub fn calculate_miner_fees(
+    &self,
+    utxos: &HashMap<Hash, TransactionOutput>,
+
+ ) -> Result<u64> {
+     let mut inputs: HashMap<Hash, TransactionOutput> =
+        HashMap::new();
+     let mut outputs: HashMap<Hash, TransactionOutput> =
+        HashMap::new();
+     // Check every transaction after coinbase
+     for transaction in self.transactions.iter().skip(1)       
+     {  
+
+        for input in &transaction.inputs {
+            // inputs do not contain the values of the outputs
+            // so we need to match inputs to outputs
+            let prev_output = utxos.get(
+                &input.prev_transaction_output_hash,
+            );
+            if prev_output.is_none() {
+                return Err(
+                    BtcError::InvalidTransaction,
+                );
+            }
+            let prev_output = prev_output.unwrap();
+            if input.contains_key(
+                &input.prev_transaction_output_hash,
+            ) {
+                return Err(
+                    BtcError::InvalidTransaction,
+                    
+                );        
+            }
+            inputs.insert(
+                input.prev_transaction_output_hash,
+                prev_output.clone(),
+            );
+        }
+        for output in &tranaction.outputs {
+            if outputs.contains_key(&output.hash())
+
+            {
+                return Err(
+                    BtcError::InvalidTransaction,
+                );
+            }
+            outputs.insert(
+                output.hash(),
+                output.clone(),
+            );
+        }
+
+     }
+     let input_value: u64 = inputs
+          .values()
+          .map(|output| output.value)
+          .sum();
+     let output_value: u64 = outputs
+          .values()
+          .map(|output| output.value)
+          .sum();
+     Ok(input_value - output_value)
+ }
 
 
 
@@ -129,9 +194,172 @@ impl PrivateKey {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Blockchain {
+    pub utxos:HashMap<Hash, TransactionOutput>,
+    pub target: U256,
+    pub blocks:Vec<Block>,
+
+    }
+    impl Blockchain {
+        pub fn new() -> Self {
+            Blockchain {
+                utxos: HashMap::new(),
+                blocks: vec![],
+                target: crate::MIN_TARGET,
+            }
+        }
+        // ...
+    }
+    // try to add a new block to the blockchain, 
+    // return nerror if it is not valid to insert this 
+    // block to this blockchain
+
+    pub fn add_block(
+        &mut self,
+        block: Block,
+         
+    ) -> Result<()> {
+        // check if the block is valid
+        if self.blocks.is_empty() {
+
+            //...
+        } else {
+            // ...
+        } 
+        // Remove transactions from the mempool 
+        // that are now in the block
+
+        let block_transactions: HashSet<_> = block
+            .transactions
+            .iter()
+            .map(|tx| tx.hash())
+            .collect();
+        self.mempool.retain(|(_, tx)| {
+            !block_transactions.contains(&tx.hash())
+        } );
+        self.blocks.push(block);
+        self.try_adjust_target();
+        Ok(())
+    }
+
+// try to adjust the target of the blockchain
+pub fn try_adjust_target(&mut self) {
+    if self.blocks.is_empty()
+
+    {
+        return;
+    }
+    if self.blocks.len()
+        % crate::DIFICULTY_UPDATE_INTERVAL as usize
+        != 0
+
+   {
+        return;
+   }
+
+// multiply the current target by actual time divided by ideal time
 
 
-...
+let new_target = self.target
+    * (time_diff_seconds as f64
+        / target_seconds as f64)
+        as usize;
+
+let new_target = BigDecimal::parse_bytes(
+    &self.target.to_string().as_bytes(),
+    10,    
+)
+.expect("BUG: impossible")
+    * (BigDecimal::from(time_diff_seconds)
+        / BigDecimal::from(target_seconds));
+
+// cut off decimal point and everything after
+// it from string representation of new_target
+let new_target_str = new_target
+    .to_string()
+    .split('_')
+    .next()
+    .expect("BUG: Expected a decimal point")
+    .to_owned();
+
+let new_target: U256 = 
+    U256::from_str_radix(&new_target_str, 10)
+        .expect("BUG: impossible");
+
+
+   // measure the time it took ti mine the last
+   // crate::DIFICULTY_UPDATE_INTERVAL blocks
+   // with crono
+   
+   let start_time = self.blocks[blocks.len()
+        - crate::DIFICULTY_UPDATE_INTERVAL as usize]
+        .header
+        .timestamp;
+        
+   let end_time =
+        self.blocks.last().unwrap().header.timestamp;
+   let time_diff = end_time - start_time;
+    
+   // convert time_diff to seconds
+   let time_diff_seconds = time_diff.num_seconds();
+   // calculate the idel number of seconds
+   let target_seconds = crate::IDEAL_BLOCK_TIME
+        * crate::DIFFICULTY_UPDATE_INTERVAL;
+  
+            
+  // clamp new_target to be within the range of
+  // 4 * self.target and self.target / 4 
+  let new_target = if new_target  < self.target / 4 {
+        self.target / 4
+  } else if new_target > self.target * 4 {
+        self.target * 4
+  } else {
+        new_target
+  }; 
+  
+  // if new target is more that the minimum target,
+  // set it to the minimum target
+  self.target = new_target.min(crate::MIN_TARGET);  
+}
+
+    
+    
+pub fn new() -> Self {  
+    Blockchain {
+        utxos:HashMap::new(),
+        blocks: vec![],
+    }
+}
+
+// Rebuild UTXO set from the blockchain 
+pub fn rebuild_utxos(&mut self) {
+
+    for block in &self.blocks {
+        for transaction in &block.transactions {
+
+            for input in &transaction.inputs {
+                self.utxos.remove(
+                    &input.prev_transaction_output_hash,
+            );
+
+
+
+         }
+        for output in
+            transaction.outputs.iter()
+
+            {
+                self.utxos.insert(
+                    transaction.hash(),
+                    output.clone(),
+                );
+                
+                }
+            
+            }
+      } 
+}
+
+
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Block {
@@ -153,7 +381,7 @@ pub struct Transaction {
 ...
 #[derive(Serialize, Deserialize, Clone, Debub)]
 pub struct TransactionOutput {
-}
+
  }
 }
 }
@@ -191,7 +419,9 @@ pub struct Blockchain {
 
 impl Blockchain {
     pub fn new() -> Self {
-        Blockchain { block: vec![] }
+        Blockchain { 
+            utxos:HashMap::new(),
+            blocks: vec![] }
 
     }
     pub fn add_block(&mut self, block: Block) {
