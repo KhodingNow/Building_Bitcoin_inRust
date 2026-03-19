@@ -1,3 +1,5 @@
+
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use crate::crypto::{PublicKey, Signature};
@@ -7,8 +9,6 @@ use crate::util::MerkleRoot;
 use crate::U256;
 use uuid::Uuid;
 use bigdecimal::BigDecimal; // my street name is Big Decimal
-use crate::crypto::{PublicKey, Signature};
-use std::collections::HashMap;
 use std::collections::{HashMap, HashSet };
 
 pub fn add_block(
@@ -16,7 +16,7 @@ pub fn add_block(
     block: Block,
 ) -> Result<()> {
     // check if the block is valid
-    if self.blocks.is_empty() {
+    if self.block_height() == 0 {
         // if this block is the first block, check if the block's prev_block_hash is all zeroes
         if block.header.prev_block_hash != Hash::zero()
         {
@@ -145,6 +145,8 @@ pub struct TransactionOutput {
     pub value: u64,
     pub unique_id: Uuid,
     pub pubkey: PublicKey,
+    pub block_height: u64,
+
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -194,11 +196,40 @@ impl PrivateKey {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Blockchain {
-    pub utxos:HashMap<Hash, TransactionOutput>,
-    pub target: U256,
-    pub blocks:Vec<Block>,
+    utxos:HashMap<Hash, TransactionOutput>,
+    target: U256,
+    blocks:Vec<Block>,
+    
+}
 
-    }
+// utxos
+
+pub fn utxos(&self) -> &HashMap<Hash, TransactionOutput> {
+	&self.utxos
+
+pub block_height: u64
+
+}
+
+// target
+
+pub fn target(&self) -> U256 {
+	self.target
+}
+
+// blocks
+
+pub fn blocks(&self) -> impl Iterator<Item = &Block> {
+	self.blocks.iter()
+
+}
+
+// block height
+
+pub fn block_height(&self) -> u64 {
+	self.block_height()
+}
+
     impl Blockchain {
         pub fn new() -> Self {
             Blockchain {
@@ -286,7 +317,7 @@ let new_target: U256 =
         .expect("BUG: impossible");
 
 
-   // measure the time it took ti mine the last
+   // measure the time it took to mine the last
    // crate::DIFICULTY_UPDATE_INTERVAL blocks
    // with crono
    
@@ -414,17 +445,113 @@ pub struct Transaction;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Blockchain {
-    pub blocks: Vec<Block>,
+	utxos: HashMap<Hash, (bool, TransactionOutput)>,
+	target: U256,
+    	blocks: Vec<Block>,
+	#[serde(default, skip_serializing)]
+	mempool: Vec<Transaction>,
 }
 
 impl Blockchain {
     pub fn new() -> Self {
         Blockchain { 
-            utxos:HashMap::new(),
-            blocks: vec![] }
+            utxos:  HashMap::new(),
+            blocks: vec![],
+            target: crate::MIN_TARGET,
+	    mempool: vec![],
+ 	}
 
-    }
-    pub fn add_block(&mut self, block: Block) {
+}
+
+// mempool
+pub fn mempool(
+	&self,
+
+) -> &[Transaction] { // later, we will also need to keep track of time
+	&self.mempool
+
+}
+
+//...
+
+{
+
+// add a transaction to mempool
+pub fn add_to_mempool(
+	&mut self, 
+	transaction: Transaction,
+
+) ->Result<()> {
+
+	// validate transaction before insertion
+	// all inputs must match known UTXOs, and must be unique
+	let mut known_inputs = HashSet::new();
+	
+	for input in &transaction.inputs {
+		if !self.utxos.contains_key(
+			&input.prev_transaction_output_hash,
+		) {
+			return Err(BtcError::InvalidTransaction);
+
+}
+
+if known_input.contains(
+	&input.prev_transaction_output_hash,
+) {
+	return Err(BtcError::InvalidTransaction);
+
+}
+know_inputs
+	.insert(input.prev_transaction_output_hash);
+
+
+}
+
+// all inputs must be lower than all outputs
+
+let all_inputs = transaction
+	.inputs
+	.iter()
+	.map(|input| {
+		self.utxos
+			.get(
+				&input.prev_transaction_output_hash,
+
+				)
+				. expect("BUG impossible")
+				.value		
+			})
+
+			.sum::<u64>();
+
+let all_outputs = transactions
+	.outputs
+	.iter()
+	.map(|output| output.value)
+	.sum();
+
+if all_inputs < all_outputs {
+	
+	return Err(BtcError::InvalidTransaction);
+}
+
+self.mempool.push(transaction);
+
+// sort by miner fee
+
+self.mempool.sort_by_key(|transaction| {
+
+// ... 
+	
+
+
+});
+
+Ok(())
+
+}
+ 
+pub fn add_block(&mut self, block: Block) {
         self.blocks.push(block);
     }
    
