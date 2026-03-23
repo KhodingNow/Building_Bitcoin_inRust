@@ -39,7 +39,7 @@ impl Hash {
 
         let hash = digest(&serialized);
         let has_bytes = hex::decode(hash).unwrap();
-        let hash_array: [u8, 32] = hash_bytes.as_slice()
+        let hash_array: [u8; 32] = hash_bytes.as_slice()
             .try_into()
             .unwrap();
             
@@ -79,7 +79,7 @@ impl Hash {
 
         let hash = digest(&serialized);
         let hash_types = hex::decode(hash).unwrap();
-        let hash_array: [u8, 32] = hash_bytes.as_slice()
+        let hash_array: [u8; 32] = hash_bytes.as_slice()
             .try_into()
             .unwrap();
         Hash(U256::from(hash_array))

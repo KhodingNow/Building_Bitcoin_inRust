@@ -28,6 +28,6 @@ pub const DIFFICULTY_UPDATE_INTERVAL: = 50;
 pub mod error;
 pub mod sha256;
 pub mod types;
-pub mod util;
+pub mod utils;
 pub mod crypto;
 

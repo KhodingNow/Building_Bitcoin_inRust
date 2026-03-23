@@ -1,5 +1,6 @@
 use crate::sha256::Hash;
 use crate::types::Transaction;
+use serde::{Serialize, Deserialize};
 
 #[derive(
     Serialize,
@@ -28,7 +29,7 @@ impl MerkleRoot {
                 let left = pair[0];
 
                 // if there is no right, use the left hash again
-                left right = pair.get(1).unwrap_or(&pair[0]);
+                let right = pair.get(1).unwrap_or(&pair[0]);
                 new_layer.push(Hash::hash(&[left, *right])); 
             }
             layer = new_layer;
