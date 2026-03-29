@@ -1,99 +1,79 @@
 use std::fmt;
+
 use crate::U256;
+
+use serde::{Deserialize, Serialize};
 use sha256::digest;
-use serde::Serialize;
 
-#[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq, Eq, Hash)]
-pub struct Hash(U256);
+// ==========================================
+// Hash Type
+// ==========================================
+
+#[derive(
+    Clone, Copy, Serialize, Deserialize, Debug, PartialEq, Eq, Hash,
+)]
+pub struct Hash(pub U256);
+
+// ==========================================
+// Core Hashing Logic
+// ==========================================
+
 impl Hash {
-// ...
-// convert to bytes
-pub fn as_bytes(&self) -> [u8; 32] {
-    let mut bytes: Vec<u8> = vec![0; 32];
-    self.0.to.little_endian(&mut bytes);
-    bytes.as_slice().try_into().unwrap()
-}
-}
-
-
-
-pub struct Hash(U256);
-impl Hash {
-    // hash anything that can be serde Serialized via ciborium
-    pub fn hash<T: serde::Serialize>(data: &T) -> Self {
+    /// Hash any serializable data using SHA-256
+    pub fn hash<T: Serialize>(data: &T) -> Self {
         let mut serialized: Vec<u8> = vec![];
-        if let Err(e) = ciborium::into_writer(
 
-        data,
-        &mut serialized,
-        
-        ) {
+        if let Err(e) = ciborium::into_writer(data, &mut serialized) {
             panic!(
-                "Failed to serialize data: {:?}. \
-                This should not happen",
-
+                "Failed to serialize data: {:?}. This should not happen",
                 e
             );
         }
 
+        // sha256 crate returns hex string
+        let hash_hex = digest(&serialized);
+        let hash_bytes = hex::decode(hash_hex)
+            .expect("sha256 returned invalid hex");
 
-        let hash = digest(&serialized);
-        let has_bytes = hex::decode(hash).unwrap();
-        let hash_array: [u8; 32] = hash_bytes.as_slice()
+        let hash_array: [u8; 32] = hash_bytes
+            .as_slice()
             .try_into()
-            .unwrap();
-            
+            .expect("sha256 returned wrong length");
+
         Hash(U256::from(hash_array))
     }
-    // check if a hash matches a target
+}
+
+// ==========================================
+// Utility Methods
+// ==========================================
+
+impl Hash {
+    /// Check if a hash satisfies the mining target
     pub fn matches_target(&self, target: U256) -> bool {
-
-        self.0 <=target
-
+        self.0 <= target
     }
-    // zero hash
+
+    /// Return a zero hash
     pub fn zero() -> Self {
         Hash(U256::zero())
-
     }
 
+    /// Convert hash to raw bytes (little endian)
+    pub fn as_bytes(&self) -> [u8; 32] {
+        let mut bytes = [0u8; 32];
+        self.0.to_little_endian(&mut bytes);
+        bytes
+    }
 }
-     pub fn hash<T: serde::Serialize>(data: &T) -> Self {
 
-        let mut serialized: Vec<u8> = vec![];
-        if let Err(0) = ciborium::into_writer(
-
-            data,
-            &mut serialized,
-        ) {
-
-            panic!(
-                "Failed to serialize data: {:?}. \
-                This should not happen ",
-                
-                e                
-            );
-
-        }
-        // ...
-
-        let hash = digest(&serialized);
-        let hash_types = hex::decode(hash).unwrap();
-        let hash_array: [u8; 32] = hash_bytes.as_slice()
-            .try_into()
-            .unwrap();
-        Hash(U256::from(hash_array))
- }
-
- //  check if a hash matches a target
- pub fn matches_target(&self, target: u256) -> bool {
-        self.0 <=target
- }
-
- #[derive(Clone, Copy Serialize)]
- pub struct Hash(U256);
+// ==========================================
+// Display Formatting
+// ==========================================
 
 impl fmt::Display for Hash {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {       write!(f, "{:x}", self.0)
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:x}", self.0)
     }
 }
+```
